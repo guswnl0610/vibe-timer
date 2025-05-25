@@ -2,8 +2,8 @@
 
 // This simple script sets the ELECTRON environment variable to true
 // and then starts the Electron app
-const {spawn} = require('child_process');
-const {platform} = require('os');
+import {spawn} from 'child_process';
+import {platform} from 'os';
 
 process.env.ELECTRON = 'true';
 

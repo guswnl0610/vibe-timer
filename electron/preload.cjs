@@ -17,4 +17,15 @@ contextBridge.exposeInMainWorld('api', {
       ipcRenderer.on(channel, (event, ...args) => func(...args));
     }
   },
+  // Temporary placeholder for settings
+  settings: {
+    get: key => ({}),
+    set: (key, value) => {},
+    getAll: () => ({
+      pomodoro: 25,
+      shortBreak: 5,
+      longBreak: 15,
+      sessionsUntilLongBreak: 4,
+    }),
+  },
 });
