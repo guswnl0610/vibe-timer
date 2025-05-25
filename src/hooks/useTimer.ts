@@ -1,4 +1,6 @@
 import {useState, useEffect, useRef, useCallback} from 'react';
+import {useNotification} from './useNotification';
+import type {SessionType} from '../types';
 
 export type TimerMode = 'pomodoro' | 'shortBreak' | 'longBreak';
 
@@ -18,8 +20,23 @@ export interface TimerState {
   totalCompletedSessions: number; // total number of completed pomodoro sessions
 }
 
+// Map TimerMode to SessionType for notifications
+const mapModeToSessionType = (mode: TimerMode): SessionType => {
+  switch (mode) {
+    case 'pomodoro':
+      return 'work';
+    case 'shortBreak':
+      return 'shortBreak';
+    case 'longBreak':
+      return 'longBreak';
+  }
+};
+
 export const useTimer = (settings: TimerSettings) => {
   const sessionsUntilLongBreak = settings.sessionsUntilLongBreak || 4; // Default: 4 sessions
+
+  // Initialize notification system
+  const {notify} = useNotification();
 
   // Convert minutes to seconds for internal state
   const defaultTimes = {
@@ -38,10 +55,14 @@ export const useTimer = (settings: TimerSettings) => {
   });
 
   const intervalRef = useRef<number | null>(null);
+  const hasNotifiedRef = useRef<boolean>(false);
 
   // Automatically switch to the next mode when timer completes
   const switchToNextMode = useCallback(() => {
     setState(prevState => {
+      // Reset notification flag for the next session
+      hasNotifiedRef.current = false;
+
       if (prevState.mode === 'pomodoro') {
         // Increment completed sessions counter
         const newCompletedSessions = prevState.completedSessions + 1;
@@ -93,7 +114,7 @@ export const useTimer = (settings: TimerSettings) => {
 
       return prevState;
     });
-  }, [defaultTimes, sessionsUntilLongBreak]);
+  }, [defaultTimes, sessionsUntilLongBreak, notify]);
 
   // Clean up interval on unmount
   useEffect(() => {
@@ -135,14 +156,21 @@ export const useTimer = (settings: TimerSettings) => {
   // Watch for timer completion and auto-switch
   useEffect(() => {
     if (state.timeLeft === 0 && !state.isActive && !state.isPaused) {
+      // Show notification when timer completes
+      if (!hasNotifiedRef.current) {
+        // Trigger notification based on the completed timer mode
+        notify(mapModeToSessionType(state.mode));
+        hasNotifiedRef.current = true;
+      }
+
       // Timer has completed, switch to next mode after a short delay
       const timeoutId = setTimeout(() => {
         switchToNextMode();
-      }, 500); // Small delay before switching modes
+      }, 1500); // Slightly longer delay to allow notification to be noticed
 
       return () => clearTimeout(timeoutId);
     }
-  }, [state.timeLeft, state.isActive, state.isPaused, switchToNextMode]);
+  }, [state.timeLeft, state.isActive, state.isPaused, switchToNextMode, state.mode, notify]);
 
   // Start timer
   const startTimer = () => {
@@ -177,6 +205,7 @@ export const useTimer = (settings: TimerSettings) => {
       isActive: false,
       isPaused: false,
     }));
+    hasNotifiedRef.current = false;
   };
 
   // Change mode
@@ -188,6 +217,7 @@ export const useTimer = (settings: TimerSettings) => {
       isActive: false,
       isPaused: false,
     }));
+    hasNotifiedRef.current = false;
   };
 
   // Format time for display

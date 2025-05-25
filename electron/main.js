@@ -1,4 +1,4 @@
-import {app, BrowserWindow, ipcMain} from 'electron';
+import {app, BrowserWindow, ipcMain, Notification} from 'electron';
 import path from 'path';
 import {fileURLToPath} from 'url';
 import isDev from 'electron-is-dev';
@@ -15,7 +15,7 @@ function createWindow() {
     height: 600,
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false,
+      contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
     },
   });
@@ -50,6 +50,20 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
+  }
+});
+
+// Handle notifications from renderer process
+ipcMain.on('show-notification', (event, {title, body}) => {
+  // Check if Notifications are supported
+  if (Notification.isSupported()) {
+    const notification = new Notification({
+      title: title,
+      body: body,
+      silent: true, // Don't play the default sound as we're using our own
+    });
+
+    notification.show();
   }
 });
 

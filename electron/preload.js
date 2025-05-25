@@ -5,7 +5,7 @@ import {contextBridge, ipcRenderer} from 'electron';
 contextBridge.exposeInMainWorld('api', {
   send: (channel, data) => {
     // whitelist channels
-    let validChannels = ['message-from-renderer'];
+    let validChannels = ['message-from-renderer', 'show-notification'];
     if (validChannels.includes(channel)) {
       ipcRenderer.send(channel, data);
     }

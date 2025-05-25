@@ -4,6 +4,8 @@ import {TimerDisplay} from './TimerDisplay';
 import {TimerControls} from './TimerControls';
 import {TimerModeSelector} from './TimerModeSelector';
 import {SessionCounter} from './SessionCounter';
+import {AudioPlayer} from '../AudioPlayer';
+import {useNotification} from '@/hooks/useNotification';
 
 interface TimerProps {
   defaultSettings?: {
@@ -23,6 +25,7 @@ export const Timer: React.FC<TimerProps> = ({
   },
 }) => {
   const {state, startTimer, pauseTimer, resumeTimer, resetTimer, changeMode, formatTime} = useTimer(defaultSettings);
+  const {shouldPlaySound, currentSessionType, handleSoundComplete} = useNotification();
 
   // Total seconds for each mode (for progress bar calculation)
   const totalSeconds = {
@@ -56,6 +59,15 @@ export const Timer: React.FC<TimerProps> = ({
 
       {/* 총 완료된 세션 수 표시 */}
       <div className="mt-4 text-sm text-muted-foreground">총 완료한 세션: {state.totalCompletedSessions}</div>
+
+      {/* Audio player for notification sounds */}
+      {shouldPlaySound && currentSessionType && (
+        <AudioPlayer
+          sessionType={currentSessionType}
+          shouldPlay={shouldPlaySound}
+          onPlayComplete={handleSoundComplete}
+        />
+      )}
     </div>
   );
 };
