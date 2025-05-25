@@ -1,13 +1,13 @@
-import {useState, useEffect, useRef, useCallback} from 'react';
+import {useState, useEffect, useRef, useCallback, useMemo} from 'react';
 import {useNotification} from './useNotification';
 import type {SessionType} from '../types';
 
 export type TimerMode = 'pomodoro' | 'shortBreak' | 'longBreak';
 
 interface TimerSettings {
-  pomodoro: number; // minutes
-  shortBreak: number; // minutes
-  longBreak: number; // minutes
+  pomodoro: number; // seconds
+  shortBreak: number; // seconds
+  longBreak: number; // seconds
   sessionsUntilLongBreak?: number; // number of pomodoro sessions until long break
 }
 
@@ -38,12 +38,15 @@ export const useTimer = (settings: TimerSettings) => {
   // Initialize notification system
   const {notify} = useNotification();
 
-  // Convert minutes to seconds for internal state
-  const defaultTimes = {
-    pomodoro: settings.pomodoro * 60,
-    shortBreak: settings.shortBreak * 60,
-    longBreak: settings.longBreak * 60,
-  };
+  // Use the provided seconds directly - memoize to prevent recreation on each render
+  const defaultTimes = useMemo(
+    () => ({
+      pomodoro: settings.pomodoro,
+      shortBreak: settings.shortBreak,
+      longBreak: settings.longBreak,
+    }),
+    [settings.pomodoro, settings.shortBreak, settings.longBreak]
+  );
 
   const [state, setState] = useState<TimerState>({
     mode: 'pomodoro',
@@ -53,6 +56,33 @@ export const useTimer = (settings: TimerSettings) => {
     completedSessions: 0,
     totalCompletedSessions: 0,
   });
+
+  // 설정 업데이트 함수 - 타이머 설정이 변경되었을 때 호출됨
+  const updateSettings = useCallback(
+    (newSettings: TimerSettings) => {
+      console.log('타이머 설정 업데이트:', newSettings);
+
+      // 현재 모드에 따라 남은 시간도 새로운 설정에 맞게 업데이트
+      // 단, 타이머가 실행 중이 아닐 때만 업데이트
+      if (!state.isActive) {
+        setState(prev => ({
+          ...prev,
+          timeLeft: newSettings[prev.mode],
+        }));
+      }
+    },
+    [state.isActive]
+  );
+
+  // This effect updates the timer state when settings change - but only once when settings actually change
+  useEffect(() => {
+    if (!state.isActive) {
+      setState(prev => ({
+        ...prev,
+        timeLeft: defaultTimes[prev.mode],
+      }));
+    }
+  }, [settings.pomodoro, settings.shortBreak, settings.longBreak, defaultTimes, state.isActive]);
 
   const intervalRef = useRef<number | null>(null);
   const hasNotifiedRef = useRef<boolean>(false);
@@ -114,7 +144,7 @@ export const useTimer = (settings: TimerSettings) => {
 
       return prevState;
     });
-  }, [defaultTimes, sessionsUntilLongBreak, notify]);
+  }, [sessionsUntilLongBreak, defaultTimes.pomodoro, defaultTimes.shortBreak, defaultTimes.longBreak, notify]);
 
   // Clean up interval on unmount
   useEffect(() => {
@@ -235,5 +265,6 @@ export const useTimer = (settings: TimerSettings) => {
     resetTimer,
     changeMode,
     formatTime,
+    updateSettings,
   };
 };

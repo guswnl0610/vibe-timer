@@ -1,25 +1,37 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {Timer} from '@/components/timer/Timer';
 import {Settings} from '@/components/settings/Settings';
 import {useSettings} from '@/hooks/useSettings';
 
 function App() {
-  const {settings, loaded} = useSettings();
+  const {settings, loadSettings, loaded} = useSettings();
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsVersion, setSettingsVersion] = useState(0); // 설정 변경 추적을 위한 버전
 
+  // 컴포넌트 마운트 시 설정 로드
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  // 설정 페이지에서 타이머로 돌아올 때 설정 다시 로드
   const toggleSettings = () => {
+    if (showSettings) {
+      // 설정 페이지에서 타이머로 돌아올 때 설정 다시 로드하고 버전 증가
+      loadSettings();
+      setSettingsVersion(prev => prev + 1);
+    }
     setShowSettings(prev => !prev);
   };
 
-  // Convert minutes to minute fractions for development/testing
-  // In a real app, you'd use the actual minutes
+  // 타이머에 전달할 설정값 계산
   const getTimerSettings = () => {
     if (!loaded) return undefined;
 
+    console.log('App: 타이머에 전달할 설정', settings);
     return {
-      pomodoro: settings.pomodoro / 60, // Convert to minute fractions for testing
-      shortBreak: settings.shortBreak / 60,
-      longBreak: settings.longBreak / 60,
+      pomodoro: settings.pomodoro,
+      shortBreak: settings.shortBreak,
+      longBreak: settings.longBreak,
       sessionsUntilLongBreak: settings.sessionsUntilLongBreak,
     };
   };
@@ -35,7 +47,14 @@ function App() {
         {showSettings ? '타이머로 돌아가기' : '설정'}
       </button>
 
-      {showSettings ? <Settings /> : <Timer defaultSettings={getTimerSettings()} />}
+      {showSettings ? (
+        <Settings />
+      ) : (
+        <Timer
+          key={`timer-${settingsVersion}`} // key를 사용하여 설정 변경 시 컴포넌트 다시 마운트
+          defaultSettings={getTimerSettings()}
+        />
+      )}
     </div>
   );
 }

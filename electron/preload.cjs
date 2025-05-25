@@ -1,31 +1,50 @@
+// Minimal preload script to debug loading issues
 const {contextBridge, ipcRenderer} = require('electron');
 
-// Expose protected methods that allow the renderer process to use
-// the ipcRenderer without exposing the entire object
+// Simple in-memory store for testing
+const inMemoryStore = {
+  timerSettings: {
+    pomodoro: 25,
+    shortBreak: 5,
+    longBreak: 15,
+    sessionsUntilLongBreak: 4,
+  },
+};
+
 contextBridge.exposeInMainWorld('api', {
+  // IPC functions
   send: (channel, data) => {
-    // whitelist channels
-    let validChannels = ['message-from-renderer', 'show-notification'];
+    const validChannels = ['message-from-renderer', 'show-notification'];
     if (validChannels.includes(channel)) {
       ipcRenderer.send(channel, data);
     }
   },
   receive: (channel, func) => {
-    let validChannels = ['message-from-main'];
+    const validChannels = ['message-from-main'];
     if (validChannels.includes(channel)) {
-      // Deliberately strip event as it includes `sender`
       ipcRenderer.on(channel, (event, ...args) => func(...args));
     }
   },
-  // Temporary placeholder for settings
+  // Simple settings API using in-memory storage
   settings: {
-    get: key => ({}),
-    set: (key, value) => {},
-    getAll: () => ({
-      pomodoro: 25,
-      shortBreak: 5,
-      longBreak: 15,
-      sessionsUntilLongBreak: 4,
-    }),
+    get: key => {
+      console.log('Getting setting:', key, inMemoryStore[key]);
+      return inMemoryStore[key];
+    },
+    set: (key, value) => {
+      console.log('Setting:', key, value);
+      if (key === 'timerSettings') {
+        // Make a deep copy to ensure changes are detected
+        inMemoryStore.timerSettings = JSON.parse(JSON.stringify(value));
+        console.log('Updated timerSettings:', inMemoryStore.timerSettings);
+      } else {
+        inMemoryStore[key] = value;
+      }
+      return true;
+    },
+    getAll: () => {
+      console.log('Getting all settings:', inMemoryStore.timerSettings);
+      return inMemoryStore.timerSettings;
+    },
   },
 });

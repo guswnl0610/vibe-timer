@@ -1,18 +1,26 @@
 const {app, BrowserWindow, ipcMain, Notification} = require('electron');
 const path = require('path');
 const isDev = require('electron-is-dev');
+const fs = require('fs');
 
 let mainWindow;
 
 function createWindow() {
+  // Get absolute path to preload script
+  const preloadPath = path.resolve(__dirname, 'preload.cjs');
+
+  // Log to help debugging
+  console.log('Preload script path:', preloadPath);
+  console.log('Preload script exists:', fs.existsSync(preloadPath));
+
   // Create the browser window
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      nodeIntegration: true,
+      nodeIntegration: false,
       contextIsolation: true,
-      preload: path.resolve(__dirname, 'preload.cjs'),
+      preload: preloadPath,
     },
   });
 

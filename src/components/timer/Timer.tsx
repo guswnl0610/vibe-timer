@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {useTimer} from '@/hooks/useTimer';
 import {TimerDisplay} from './TimerDisplay';
 import {TimerControls} from './TimerControls';
@@ -18,20 +18,51 @@ interface TimerProps {
 
 export const Timer: React.FC<TimerProps> = ({
   defaultSettings = {
-    pomodoro: 25 / 60, // 25초 (25/60분)
-    shortBreak: 5 / 60, // 5초 (5/60분)
-    longBreak: 15 / 60, // 15초 (15/60분)
-    sessionsUntilLongBreak: 4, // 긴 휴식 전까지 4회의 작업 세션
+    pomodoro: 25, // Default 25 minutes
+    shortBreak: 5, // Default 5 minutes
+    longBreak: 15, // Default 15 minutes
+    sessionsUntilLongBreak: 4, // Default 4 sessions
   },
 }) => {
-  const {state, startTimer, pauseTimer, resumeTimer, resetTimer, changeMode, formatTime} = useTimer(defaultSettings);
+  console.log('Timer 컴포넌트 렌더링, 설정:', defaultSettings);
+
+  // Convert minutes to seconds for internal use in the timer hook
+  const timerSettings = {
+    pomodoro: defaultSettings.pomodoro * 60, // Convert minutes to seconds
+    shortBreak: defaultSettings.shortBreak * 60,
+    longBreak: defaultSettings.longBreak * 60,
+    sessionsUntilLongBreak: defaultSettings.sessionsUntilLongBreak || 4,
+  };
+
+  const {state, startTimer, pauseTimer, resumeTimer, resetTimer, changeMode, formatTime, updateSettings} =
+    useTimer(timerSettings);
   const {shouldPlaySound, currentSessionType, handleSoundComplete} = useNotification();
+
+  // defaultSettings가 변경될 때 타이머 설정 업데이트
+  useEffect(() => {
+    console.log('Timer: defaultSettings 변경 감지', defaultSettings);
+
+    const updatedSettings = {
+      pomodoro: defaultSettings.pomodoro * 60,
+      shortBreak: defaultSettings.shortBreak * 60,
+      longBreak: defaultSettings.longBreak * 60,
+      sessionsUntilLongBreak: defaultSettings.sessionsUntilLongBreak || 4,
+    };
+
+    updateSettings(updatedSettings);
+  }, [
+    defaultSettings.pomodoro,
+    defaultSettings.shortBreak,
+    defaultSettings.longBreak,
+    defaultSettings.sessionsUntilLongBreak,
+    updateSettings,
+  ]);
 
   // Total seconds for each mode (for progress bar calculation)
   const totalSeconds = {
-    pomodoro: defaultSettings.pomodoro * 60,
-    shortBreak: defaultSettings.shortBreak * 60,
-    longBreak: defaultSettings.longBreak * 60,
+    pomodoro: timerSettings.pomodoro,
+    shortBreak: timerSettings.shortBreak,
+    longBreak: timerSettings.longBreak,
   };
 
   return (

@@ -2,7 +2,8 @@ import React, {useState, useEffect} from 'react';
 import {useSettings} from '@/hooks/useSettings';
 
 export const Settings: React.FC = () => {
-  const {settings, saveSettings, loaded} = useSettings();
+  const {settings, saveSettings, loadSettings, loaded} = useSettings();
+  const [saveStatus, setSaveStatus] = useState<{success?: boolean; message?: string} | null>(null);
 
   const [formValues, setFormValues] = useState({
     pomodoro: 25,
@@ -14,6 +15,7 @@ export const Settings: React.FC = () => {
   // Update form when settings are loaded
   useEffect(() => {
     if (loaded && settings) {
+      console.log('Settings loaded:', settings);
       setFormValues(settings);
     }
   }, [settings, loaded]);
@@ -37,12 +39,40 @@ export const Settings: React.FC = () => {
       ...prev,
       [name]: numValue,
     }));
+
+    // Clear previous save status when form changes
+    setSaveStatus(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await saveSettings(formValues);
-    // You could add a success notification here
+    console.log('Submitting settings:', formValues);
+
+    try {
+      const result = await saveSettings(formValues);
+      if (result) {
+        setSaveStatus({
+          success: true,
+          message: '설정이 성공적으로 저장되었습니다!',
+        });
+
+        // Reload settings instead of refreshing the page
+        setTimeout(() => {
+          loadSettings();
+        }, 500);
+      } else {
+        setSaveStatus({
+          success: false,
+          message: '설정 저장에 실패했습니다.',
+        });
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      setSaveStatus({
+        success: false,
+        message: '설정 저장 중 오류가 발생했습니다.',
+      });
+    }
   };
 
   if (!loaded) {
@@ -52,6 +82,16 @@ export const Settings: React.FC = () => {
   return (
     <div className="w-full max-w-md mx-auto">
       <h2 className="text-2xl font-bold mb-6">타이머 설정</h2>
+
+      {saveStatus && (
+        <div
+          className={`p-3 mb-4 rounded-md ${
+            saveStatus.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}
+        >
+          {saveStatus.message}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
