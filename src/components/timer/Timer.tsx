@@ -14,9 +14,9 @@ interface TimerProps {
 
 export const Timer: React.FC<TimerProps> = ({
   defaultSettings = {
-    pomodoro: 25, // 25분
-    shortBreak: 5, // 5분
-    longBreak: 15, // 15분
+    pomodoro: 25 / 60, // 25초 (25/60분)
+    shortBreak: 5 / 60, // 5초 (5/60분)
+    longBreak: 15 / 60, // 15초 (15/60분)
   },
 }) => {
   const {state, startTimer, pauseTimer, resumeTimer, resetTimer, changeMode, formatTime} = useTimer(defaultSettings);
