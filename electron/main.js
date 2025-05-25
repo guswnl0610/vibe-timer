@@ -1,0 +1,60 @@
+import {app, BrowserWindow, ipcMain} from 'electron';
+import path from 'path';
+import {fileURLToPath} from 'url';
+import isDev from 'electron-is-dev';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+let mainWindow;
+
+function createWindow() {
+  // Create the browser window
+  mainWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  });
+
+  // Load the app
+  const startUrl = isDev ? 'http://localhost:5173' : `file://${path.join(__dirname, '../dist/index.html')}`;
+
+  mainWindow.loadURL(startUrl);
+
+  // Open DevTools if in development mode
+  if (isDev) {
+    mainWindow.webContents.openDevTools();
+  }
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+}
+
+// This method will be called when Electron has finished initialization
+app.whenReady().then(() => {
+  createWindow();
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+});
+
+// Quit when all windows are closed, except on macOS
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+// Handle IPC messages from renderer
+ipcMain.on('message-from-renderer', (event, arg) => {
+  console.log(arg);
+  event.reply('message-from-main', 'Hello from main process');
+});
