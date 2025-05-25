@@ -1,5 +1,5 @@
 // Notification utility functions
-import {SessionType} from '../types';
+import type {SessionType} from '@/types';
 
 // Audio instances for different notification sounds
 let workEndSound: HTMLAudioElement;
