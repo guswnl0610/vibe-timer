@@ -1,10 +1,6 @@
-import {app, BrowserWindow, ipcMain, Notification} from 'electron';
-import path from 'path';
-import {fileURLToPath} from 'url';
-import isDev from 'electron-is-dev';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const {app, BrowserWindow, ipcMain, Notification} = require('electron');
+const path = require('path');
+const isDev = require('electron-is-dev');
 
 let mainWindow;
 
