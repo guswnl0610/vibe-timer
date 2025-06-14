@@ -25,6 +25,7 @@ export const Timer: React.FC<TimerProps> = ({
   },
 }) => {
   console.log('Timer 컴포넌트 렌더링, 설정:', defaultSettings);
+  console.log('Timer 컴포넌트 렌더링, 설정:222', defaultSettings);
 
   // defaultSettings 변경을 추적하기 위한 ref
   const settingsRef = useRef(defaultSettings);
